@@ -1,0 +1,17 @@
+[
+  {
+    "directory": "/root/cpp_refactory/mcp/clang-ast-mcp/tests/fixtures",
+    "command": "clang++ -std=c++17 -c sample.cpp",
+    "file": "sample.cpp"
+  },
+  {
+    "directory": "/root/cpp_refactory/mcp/clang-ast-mcp/tests/fixtures",
+    "command": "clang++ -std=c++17 -c complex.cpp",
+    "file": "complex.cpp"
+  },
+  {
+    "directory": "/root/cpp_refactory/mcp/clang-ast-mcp/tests/fixtures",
+    "command": "clang++ -std=c++17 -c legacy_monster.cpp",
+    "file": "legacy_monster.cpp"
+  }
+]

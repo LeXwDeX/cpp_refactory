@@ -2,37 +2,116 @@
 
 OpenCode plugin for AI-assisted C++ legacy code refactoring with MCP-driven safety nets.
 
-## What it does
+## Architecture
 
-Turns OpenCode into a C++ legacy code surgery suite:
+```
+┌─────────────────────────────────────────────────────────────┐
+│  opencode                                                   │
+│                                                             │
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │  NPM Plugin: opencode-cpp-refactory                   │  │
+│  │  ├── 14 custom tools (bash scripts)                   │  │
+│  │  ├── Event hooks (session / tool-guard / env-inject)  │  │
+│  │  └── MCP client ─────────────────┐                    │  │
+│  └───────────────────────────────────┼────────────────────┘  │
+│                                      │ stdio (JSON-RPC 2.0) │
+└──────────────────────────────────────┼──────────────────────┘
+                                       │
+                        ┌──────────────▼──────────────────┐
+                        │  Docker Container (user-managed) │
+                        │  └── clang-ast-mcp server        │
+                        │      ├── ASTEngine (libclang-18) │
+                        │      ├── list_functions          │
+                        │      ├── globals_finder          │
+                        │      ├── virtual_calls           │
+                        │      └── macro_jungle            │
+                        └──────────────────────────────────┘
+```
 
-- **14 custom tools** wrapping battle-tested bash scripts (project scanning, seam discovery, partition ledger, verification)
-- **Event hooks** that enforce 5 hard constraints automatically (read state before acting, one partition at a time, verify after changes)
-- **Shell env injection** so scripts find their resources regardless of working directory
-- **MCP integration** with clang-ast (AST-precise analysis), codegraph (structural queries), and mempalace (persistent memory)
+**Three components, each with its own role:**
 
-## Install
+| Component | What | How |
+|---|---|---|
+| **NPM Plugin** | Entry point — tools, hooks, workflow enforcement | `npm install opencode-cpp-refactory` |
+| **MCP** | Communication protocol (JSON-RPC over stdio) | Configured in `opencode.json` |
+| **Docker** | clang-ast-mcp server runtime (user builds & runs) | `docker build` + `docker run` |
+
+---
+
+## Installation
+
+### Step 1: Install the NPM Plugin
 
 ```bash
 npm install opencode-cpp-refactory
 ```
 
-Add to your `opencode.json`:
+### Step 2: Build the Docker Image
+
+The clang-ast-mcp server runs inside a Docker container with full LLVM/Clang 18 toolchain. Build it from this repo:
+
+```bash
+git clone https://github.com/LeXwDeX/Cpp_Refactory.git
+cd Cpp_Refactory
+docker build -t cpp-refactory -f docker/Dockerfile .
+```
+
+The build automatically runs the test suite (42 assertions + E2E refactor tests). **Any failure aborts the build.**
+
+### Step 3: Configure opencode.json
+
+Add both the plugin and the MCP server to your project's `opencode.json`:
 
 ```json
 {
-  "plugin": ["opencode-cpp-refactory"]
+  "plugin": ["opencode-cpp-refactory"],
+  "mcp": {
+    "clang-ast": {
+      "type": "local",
+      "command": [
+        "docker", "run", "--rm", "-i",
+        "-v", "/path/to/your/cpp/project:/work:ro",
+        "cpp-refactory"
+      ],
+      "enabled": true
+    }
+  }
 }
 ```
+
+**Configuration breakdown:**
+
+| Field | Purpose |
+|---|---|
+| `"plugin"` | Registers the NPM plugin with opencode |
+| `"mcp.clang-ast"` | Tells opencode how to start the MCP server |
+| `"-v ...:/work:ro"` | Mounts your C++ project read-only into the container |
+| `"docker run -i"` | `-i` is **required** — MCP uses stdin/stdout for JSON-RPC |
+
+> **Tip:** Replace `/path/to/your/cpp/project` with your actual project path. The container only reads your source files; all analysis happens in-memory.
+
+### Step 4: Verify
+
+Open opencode in your C++ project and call the `cpp-bootstrap` tool. If everything is wired correctly:
+
+1. Plugin hooks fire (`session.created` logs appear)
+2. MCP tools are available (`clang_ast_load`, `clang_ast_list_functions`, etc.)
+3. `cpp-bootstrap` initializes `.cpp_refactory/` workspace
+
+---
 
 ## Quick Start
 
 1. Open a C++ project in OpenCode
-2. Call the `cpp-bootstrap` tool to initialize `.cpp_refactory/` workspace
+2. Call `cpp-bootstrap` to initialize `.cpp_refactory/` workspace
 3. Call `cpp-scan` to scan the project
 4. Follow the 6-phase workflow: Reconnaissance → Seam Discovery → Partition Planning → Refactoring → Verification → Archive
 
-## Tools
+---
+
+## Plugin Tools
+
+These 14 tools are registered by the NPM plugin and available immediately after installation:
 
 | Tool | Description |
 |------|-------------|
@@ -51,6 +130,20 @@ Add to your `opencode.json`:
 | `ledger-status` | View current ledger overview |
 | `ledger-list` | List all partition details |
 
+## MCP Tools (via Docker)
+
+These tools are provided by the clang-ast-mcp server running in Docker. They require the MCP configuration from Step 3:
+
+| Tool | Description |
+|---|---|
+| `clang_ast_load` | Pre-warm AST cache for a file |
+| `clang_ast_list_functions` | List functions with cyclomatic complexity and line boundaries |
+| `clang_ast_globals` | Global variable analysis (SIOF risk detection) |
+| `clang_ast_virtual_calls` | Virtual call sites + override candidates |
+| `clang_ast_macro_jungle` | Preprocessor complexity report |
+
+---
+
 ## Hooks
 
 ### session.created
@@ -62,35 +155,89 @@ Blocks cpp-refactory tools (except `cpp-bootstrap`) if `.cpp_refactory/` doesn't
 ### shell.env
 Injects `CPP_REFACTORY_ROOT`, `CPP_REFACTORY_SCRIPTS`, `CPP_REFACTORY_RESOURCES` into all shell sessions.
 
-## MCP Dependencies
+---
 
-This plugin works best with these MCP servers configured:
+## Docker Reference
 
-- **clang-ast-mcp** — AST-precise C++ analysis (function boundaries, cyclomatic complexity, globals, virtual calls)
+The Docker image supports multiple run modes:
+
+```bash
+# MCP server mode (default — used by opencode.json)
+docker run --rm -i -v /path/to/project:/work:ro cpp-refactory
+
+# Interactive shell (debugging)
+docker run --rm -it -v /path/to/project:/work cpp-refactory shell
+
+# Run test suite
+docker run --rm cpp-refactory test --all
+
+# Full sandbox validation
+docker run --rm cpp-refactory bash /opt/cpp_refactory/docker/validate-sandbox.sh
+```
+
+### Docker Compose
+
+```bash
+export CPP_PROJECT_PATH=/path/to/your/cpp/repo
+
+# Start MCP server
+docker compose -f docker/docker-compose.yml run --rm -T mcp-server
+
+# Run tests
+docker compose -f docker/docker-compose.yml run --rm test
+
+# Interactive shell
+docker compose -f docker/docker-compose.yml run --rm shell
+```
+
+### Security Isolation (docker-compose.yml)
+
+| Measure | Description |
+|---|---|
+| `read_only: true` | Read-only root filesystem |
+| `no-new-privileges` | Prevent privilege escalation |
+| `cap_drop: ALL` | Remove all Linux capabilities |
+| `cap_add: DAC_READ_SEARCH` | Only allow reading mounted files |
+| `networks: internal` | No external network access |
+| `memory: 4G` / `cpus: 4.0` | Resource limits |
+| `/work:ro` | Host project mounted read-only |
+
+### What's Inside the Image
+
+| Component | Source | Purpose |
+|---|---|---|
+| LLVM/Clang 18 | Ubuntu 24.04 apt | C++ compilation + AST analysis |
+| libclang-18-dev | Ubuntu 24.04 apt | Python binding for AST |
+| clang-tidy / clang-format | Ubuntu 24.04 apt | Static analysis / formatting |
+| cppcheck | Ubuntu 24.04 apt | Complementary static analysis |
+| bear | Ubuntu 24.04 apt | Generate compile_commands.json |
+| **clang-ast-mcp** | This repo (`mcp/`) | MCP server with 5 AST tools |
+
+---
+
+## Optional MCP Servers
+
+The plugin also integrates with these optional MCP servers (configure separately in `opencode.json`):
+
 - **codegraph** — Tree-sitter structural queries (impact analysis, call graph, symbol search)
 - **mempalace** — Persistent semantic memory + knowledge graph (cross-session learning)
 
-All three are optional — the plugin degrades gracefully when they're unavailable.
+The plugin degrades gracefully when they're unavailable.
 
-## Architecture
-
-```
-OpenCode Runtime
-├── Plugin (this package)
-│   ├── Custom tools → wrap bash scripts via Bun.$
-│   └── Event hooks → enforce constraints automatically
-├── MCP: clang-ast-mcp (compiler-grade AST)
-├── MCP: codegraph (tree-sitter structural queries)
-└── MCP: mempalace (persistent memory)
-```
+---
 
 ## Development
 
 ```bash
+# Plugin development
 npm install
 npm test          # 38 tests, node:test + tsx
 npm run build     # tsup → dist/index.js
 npm run typecheck # tsc --noEmit
+
+# Docker image
+docker build -t cpp-refactory -f docker/Dockerfile .
+docker run --rm cpp-refactory test --all
 ```
 
 ## License

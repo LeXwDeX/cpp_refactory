@@ -1,0 +1,135 @@
+# docker-compose.yml — clang-ast-mcp 沙盒编排
+#
+# 用法：
+#   # 启动 MCP server（stdio 模式，需从宿主 attach stdin）
+#   docker compose up -d mcp-server
+#
+#   # 运行测试
+#   docker compose run --rm test
+#
+#   # 交互调试
+#   docker compose run --rm shell
+#
+# 宿主集成（opencode.json）：
+#   "command": ["docker", "compose", "-f", "/root/cpp_refactory/docker/docker-compose.yml",
+#               "run", "--rm", "-T", "mcp-server"]
+
+services:
+  # --- MCP Server（stdio 模式） ---
+  mcp-server:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: cpp-refactory:latest
+    container_name: clang-ast-mcp
+    stdin_open: true       # MCP 需要 stdin
+    tty: false             # 不需要 tty（JSON-RPC 不是交互式）
+    entrypoint: ["/opt/cpp_refactory/docker/entrypoint.sh"]
+    command: ["mcp"]
+    working_dir: /work
+    volumes:
+      - ${CPP_PROJECT_PATH:-.}:/work:ro    # 宿主项目只读挂载
+      - work-tmp:/tmp                       # 临时文件隔离
+    environment:
+      - CLANG_AST_MCP_LOG=INFO
+      - PYTHONIOENCODING=utf-8
+      - PYTHONDONTWRITEBYTECODE=1
+    # --- 安全隔离 ---
+    read_only: true                         # 根文件系统只读
+    tmpfs:
+      - /tmp:size=512m,mode=1777           # 可写 /tmp
+      - /root/.cache:size=256m             # pipx/python 缓存
+    security_opt:
+      - no-new-privileges:true             # 禁止提权
+    cap_drop:
+      - ALL                                 # 移除所有 capabilities
+    cap_add:
+      - DAC_READ_SEARCH                    # 允许读取挂载的文件
+    networks:
+      - sandbox-internal
+    deploy:
+      resources:
+        limits:
+          cpus: "4.0"
+          memory: 4G
+        reservations:
+          cpus: "1.0"
+          memory: 512M
+    healthcheck:
+      test: ["/opt/cpp_refactory/docker/entrypoint.sh", "healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+  # --- 测试运行器 ---
+  test:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: cpp-refactory:latest
+    entrypoint: ["/opt/cpp_refactory/docker/entrypoint.sh"]
+    command: ["test", "--all"]
+    working_dir: /opt/cpp_refactory/mcp/clang-ast-mcp
+    tmpfs:
+      - /tmp:size=512m,mode=1777
+    networks:
+      - sandbox-internal
+    deploy:
+      resources:
+        limits:
+          cpus: "4.0"
+          memory: 4G
+
+  # --- 交互 shell（调试用） ---
+  shell:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: cpp-refactory:latest
+    entrypoint: ["/opt/cpp_refactory/docker/entrypoint.sh"]
+    command: ["shell"]
+    stdin_open: true
+    tty: true
+    working_dir: /work
+    volumes:
+      - ${CPP_PROJECT_PATH:-.}:/work
+      - work-tmp:/tmp
+    environment:
+      - CLANG_AST_MCP_LOG=DEBUG
+    networks:
+      - sandbox-internal
+    deploy:
+      resources:
+        limits:
+          cpus: "4.0"
+          memory: 4G
+
+  # --- 带网络的构建模式（用于 bear -- make） ---
+  builder:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: cpp-refactory:latest
+    entrypoint: ["/bin/bash"]
+    stdin_open: true
+    tty: true
+    working_dir: /work
+    volumes:
+      - ${CPP_PROJECT_PATH:-.}:/work
+    environment:
+      - CLANG_AST_MCP_LOG=DEBUG
+    deploy:
+      resources:
+        limits:
+          cpus: "4.0"
+          memory: 8G
+
+networks:
+  sandbox-internal:
+    driver: bridge
+    internal: true            # 无外网访问
+
+volumes:
+  work-tmp:
+    driver: local

@@ -34,3 +34,10 @@ __pycache__/
 
 # Test artifacts
 tests/results/
+
+# MemPalace per-project files (issue #185)
+mempalace.yaml
+entities.json
+
+# CodeGraph index
+.codegraph/

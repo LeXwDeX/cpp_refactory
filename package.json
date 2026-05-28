@@ -33,12 +33,12 @@
     ],
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/LeXwDeX/cpp-refactory.git"
+        "url": "git+https://github.com/LeXwDeX/Cpp_Refactory.git"
     },
     "bugs": {
-        "url": "https://github.com/LeXwDeX/cpp-refactory/issues"
+        "url": "https://github.com/LeXwDeX/Cpp_Refactory/issues"
     },
-    "homepage": "https://github.com/LeXwDeX/cpp-refactory#readme",
+    "homepage": "https://github.com/LeXwDeX/Cpp_Refactory#readme",
     "author": "LeXwDeX",
     "license": "AGPL-3.0-or-later",
     "peerDependencies": {
