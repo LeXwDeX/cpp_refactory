@@ -1,17 +1,17 @@
 [
   {
-    "directory": "/root/cpp_refactory/mcp/clang-ast-mcp/tests/fixtures",
-    "command": "clang++ -std=c++17 -c sample.cpp",
+    "directory": "/mnt/d/yc_agents_orchestration/consult/cpp_refactory/mcp/clang-ast-mcp/tests/fixtures",
+    "command": "g++ -std=c++17 -isystem /usr/include/c++/13 -isystem /usr/include/x86_64-linux-gnu/c++/13 -isystem /usr/include/c++/13/backward -isystem /usr/lib/gcc/x86_64-linux-gnu/13/include -isystem /usr/local/include -isystem /usr/include/x86_64-linux-gnu -isystem /usr/include -c sample.cpp",
     "file": "sample.cpp"
   },
   {
-    "directory": "/root/cpp_refactory/mcp/clang-ast-mcp/tests/fixtures",
-    "command": "clang++ -std=c++17 -c complex.cpp",
+    "directory": "/mnt/d/yc_agents_orchestration/consult/cpp_refactory/mcp/clang-ast-mcp/tests/fixtures",
+    "command": "g++ -std=c++17 -isystem /usr/include/c++/13 -isystem /usr/include/x86_64-linux-gnu/c++/13 -isystem /usr/include/c++/13/backward -isystem /usr/lib/gcc/x86_64-linux-gnu/13/include -isystem /usr/local/include -isystem /usr/include/x86_64-linux-gnu -isystem /usr/include -c complex.cpp",
     "file": "complex.cpp"
   },
   {
-    "directory": "/root/cpp_refactory/mcp/clang-ast-mcp/tests/fixtures",
-    "command": "clang++ -std=c++17 -c legacy_monster.cpp",
+    "directory": "/mnt/d/yc_agents_orchestration/consult/cpp_refactory/mcp/clang-ast-mcp/tests/fixtures",
+    "command": "g++ -std=c++17 -isystem /usr/include/c++/13 -isystem /usr/include/x86_64-linux-gnu/c++/13 -isystem /usr/include/c++/13/backward -isystem /usr/lib/gcc/x86_64-linux-gnu/13/include -isystem /usr/local/include -isystem /usr/include/x86_64-linux-gnu -isystem /usr/include -c legacy_monster.cpp",
     "file": "legacy_monster.cpp"
   }
 ]
