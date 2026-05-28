@@ -1,6 +1,8 @@
 # opencode-cpp-refactory
 
-OpenCode plugin for AI-assisted C++ legacy code refactoring with MCP-driven safety nets.
+**[中文文档](README_ZH-CN.md)**
+
+OpenCode plugin for AI-assisted C++ legacy code refactoring and new feature development with MCP-driven safety nets.
 
 ## Architecture
 
