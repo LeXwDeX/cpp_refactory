@@ -1,0 +1,21 @@
+# Development files
+node_modules/
+*.log
+.DS_Store
+tsconfig.json
+tsup.config.ts
+
+# Source files (since we're shipping dist/)
+index.ts
+lib/
+
+# Tests
+tests/
+
+# Git
+.git/
+.gitignore
+
+# OpenCode
+.opencode/
+.task_state/

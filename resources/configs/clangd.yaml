@@ -1,0 +1,23 @@
+CompileFlags:
+  Add:
+    - "-xc++"
+    - "-Wall"
+    - "-Wextra"
+  CompilationDatabase: .
+
+Diagnostics:
+  ClangTidy:
+    Add:
+      - "bugprone-*"
+      - "modernize-*"
+      - "performance-*"
+      - "readability-*"
+      - "cppcoreguidelines-*"
+    Remove:
+      - "modernize-use-trailing-return-type"
+      - "readability-magic-numbers"
+
+InlayHints:
+  Enabled: true
+  ParameterNames: true
+  DeducedTypes: true

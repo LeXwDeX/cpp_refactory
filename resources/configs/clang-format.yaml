@@ -1,0 +1,43 @@
+---
+# clang-format 配置
+# 部署到目标项目根目录下重命名为 .clang-format
+#
+# 使用方法：
+#   clang-format -i <文件>         # 格式化文件
+#   clang-format --dry-run <文件>  # 预览变更
+
+# 基础风格：根据项目实际情况调整
+# 对于遗留项目，建议先用 LLVM 或 Google 风格，后续逐步统一
+BasedOnStyle: LLVM
+
+# 缩进
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+IndentCaseLabels: true
+
+# 行宽
+ColumnLimit: 120
+
+# 大括号
+BreakBeforeBraces: Attach
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+
+# 指针和引用对齐
+PointerAlignment: Left
+ReferenceAlignment: Left
+
+# include 排序
+SortIncludes: CaseInsensitive
+IncludeBlocks: Regroup
+
+# 命名空间
+FixNamespaceComments: true
+NamespaceIndentation: None
+
+# 其他
+AlignTrailingComments: true
+SpaceBeforeParens: ControlStatements
+SpaceAfterCStyleCast: false

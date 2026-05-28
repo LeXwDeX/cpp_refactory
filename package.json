@@ -1,0 +1,70 @@
+{
+    "$schema": "https://json.schemastore.org/package.json",
+    "name": "opencode-cpp-refactory",
+    "version": "1.0.0",
+    "type": "module",
+    "description": "OpenCode plugin for AI-assisted C++ legacy code refactoring with MCP-driven safety nets",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
+        }
+    },
+    "scripts": {
+        "clean": "rm -rf dist",
+        "build": "npm run clean && tsup && tsc --emitDeclarationOnly",
+        "typecheck": "tsc --noEmit",
+        "test": "node --import tsx --test 'tests/**/*.test.ts' 'tests/*.test.ts'",
+        "prepublishOnly": "npm run build"
+    },
+    "keywords": [
+        "opencode",
+        "opencode-plugin",
+        "plugin",
+        "cpp",
+        "c++",
+        "refactoring",
+        "legacy-code",
+        "mcp",
+        "clang",
+        "static-analysis"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/LeXwDeX/cpp-refactory.git"
+    },
+    "bugs": {
+        "url": "https://github.com/LeXwDeX/cpp-refactory/issues"
+    },
+    "homepage": "https://github.com/LeXwDeX/cpp-refactory#readme",
+    "author": "LeXwDeX",
+    "license": "AGPL-3.0-or-later",
+    "peerDependencies": {
+        "@opencode-ai/plugin": ">=1.4.3"
+    },
+    "dependencies": {
+        "@opencode-ai/sdk": "^1.4.3"
+    },
+    "devDependencies": {
+        "@opencode-ai/plugin": "^1.4.3",
+        "@types/node": "^22.13.17",
+        "tsup": "^8.5.1",
+        "tsx": "^4.19.0",
+        "typescript": "^5.8.2"
+    },
+    "files": [
+        "dist/",
+        "scripts/",
+        "resources/",
+        "README.md",
+        "LICENSE"
+    ],
+    "engines": {
+        "node": ">=18.0.0"
+    },
+    "publishConfig": {
+        "access": "public"
+    }
+}

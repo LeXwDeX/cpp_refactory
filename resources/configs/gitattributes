@@ -1,0 +1,34 @@
+# .gitattributes — 强制 shell 脚本 LF 行尾
+# 部署到目标项目根目录下重命名为 .gitattributes
+#
+# 解决问题：Windows 环境 checkout 后 .sh 文件变成 CRLF，
+# 导致 Linux 上执行报 $'\r': command not found
+
+# Shell 脚本强制 LF
+*.sh text eol=lf
+
+# Makefile 强制 LF
+Makefile text eol=lf
+*.mk text eol=lf
+GNUmakefile text eol=lf
+
+# 配置文件强制 LF
+.clang-tidy text eol=lf
+.clang-format text eol=lf
+.clangd text eol=lf
+.editorconfig text eol=lf
+
+# C/C++ 源文件自动检测（不强制，兼顾已有项目）
+*.cpp text
+*.cxx text
+*.cc text
+*.h text
+*.hpp text
+*.hxx text
+
+# 二进制文件不做行尾转换
+*.a binary
+*.o binary
+*.so binary
+*.dylib binary
+*.exe binary
