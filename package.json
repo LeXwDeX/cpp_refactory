@@ -1,13 +1,13 @@
 {
     "$schema": "https://json.schemastore.org/package.json",
     "name": "opencode-cpp-refactory",
-    "version": "2.0.0",
+    "version": "2.0.1",
     "type": "module",
     "description": "C++ 重型项目重构辅助工具 — OpenCode 插件 + CLI + MCP AST 分析",
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts",
     "bin": {
-        "cpp-refactory": "./dist/bin/cpp-refactory.js"
+        "cpp-refactory": "dist/bin/cpp-refactory.js"
     },
     "exports": {
         ".": {
