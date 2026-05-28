@@ -61,49 +61,86 @@ export function createTools(projectDir: string): Record<string, ToolDefinition> 
     return {
         "cpp-scan": shellTool(
             "cpp-scan.sh",
-            "C++ 项目预扫描：检测 C++ 标准版本、文件行数热点、include 依赖、上帝函数、#ifdef 丛林指数",
+            "Run this FIRST on any C++ project. " +
+            "Why not just grep? Because grep cannot tell you: the ACTUAL C++ standard in use " +
+            "(CMakeLists may claim C++17 but code only uses C++11 features), " +
+            "which files are the real hotspots by line count, " +
+            "the #include dependency graph, or per-file #ifdef density. " +
+            "This tool produces a structured 7-section report covering: C++ standard detection, " +
+            "file size ranking, god functions (>100 lines), include heat map, " +
+            "#ifdef jungle index, code smell metrics (raw new/delete, goto, friend, C-casts), " +
+            "and codegraph index status. One call replaces ~20 grep commands.",
             { target: schema.string() },
             (args) => [args.target]
         ),
 
         "cpp-seam-finder": shellTool(
             "cpp-seam-finder.sh",
-            "C++ 接缝发现：基于正则启发式识别全局变量、宏丛林、裸指针等接缝（降级路径，误报率 >30%）",
+            "Find refactoring seams in C++ code across 9 categories. " +
+            "Why not just grep? Because grep misses: anonymous-namespace globals, " +
+            "class-static members with dynamic initialization (SIOF risk), " +
+            "function pointers hidden behind typedefs, Meyer's singletons, " +
+            "and the new/delete balance ratio. This tool catches all of those. " +
+            "Categories: (1) global variables with linkage classification, " +
+            "(2) macro jungles with nesting depth, (3) singletons (getInstance + static local + global ptr), " +
+            "(4) raw pointers with new/delete balance check, (5) function pointers and callbacks, " +
+            "(6) friend declarations and public data members, (7) dangerous casts (const_cast/reinterpret_cast), " +
+            "(8) UB risks (iterator invalidation, dangling refs, uninitialized vars), " +
+            "(9) codegraph impact analysis on key symbols if .codegraph index exists. " +
+            "NOTE: regex heuristics have ~30% false positive rate. " +
+            "Cross-validate with clang_ast_globals MCP tool when compile_commands.json is available.",
             { target: schema.string() },
             (args) => [args.target]
         ),
 
         "cpp-bigfile-map": shellTool(
             "cpp-bigfile-map.sh",
-            "大文件分块导航地图：生成 Section Map + Function Index + God Functions + Cut Points",
+            "For any C++ file >500 lines: DO NOT Read the whole file — you will lose track of structure " +
+            "in 50K+ tokens of code. This tool gives you the map instead. " +
+            "Generates: (1) paragraph sections with line ranges, (2) complete function index with exact boundaries, " +
+            "(3) god function detection, (4) type/class hierarchy, (5) #ifdef regions, " +
+            "(6) include list, (7) suggested cut points at function boundaries, " +
+            "(8) codegraph caller/callee analysis for top god functions. " +
+            "Workflow: run this first → identify the section you need → Read only that section. " +
+            "Why not grep for functions? grep counts braces wrong with nested lambdas, " +
+            "macros that contain braces, and string literals with braces. " +
+            "This tool uses ctags for precise boundaries.",
             { file: schema.string() },
             (args) => [args.file]
         ),
 
         "cpp-verify-tools": shellTool(
             "verify-tools.sh",
-            "验证 cpp_refactory 工具链完整性（clang-tidy, cppcheck, bear, ccache 等）",
+            "Check which analysis tools are installed (clang-tidy, cppcheck, bear, ccache, codegraph, etc). " +
+            "Run this to know what's available before planning your analysis strategy. " +
+            "Reports PASS/FAIL/SKIP for each tool with version info.",
             { project: schema.optional(schema.string()) },
             (args, dir) => [args.project || dir]
         ),
 
         "cpp-bootstrap": shellTool(
             "bootstrap-project.sh",
-            "初始化目标 C++ 项目的 cpp_refactory 工作区（创建 state/ 三件套 + 扫描报告）",
+            "Initialize a C++ project for cpp_refactory: creates .cpp_refactory/state/ directory, " +
+            "generates/merges opencode.json (plugin + MCP config), checks compile_commands.json, " +
+            "runs initial scan. Run this once per project before any other cpp-refactory tool.",
             { project: schema.optional(schema.string()) },
             (args, dir) => [args.project || dir]
         ),
 
         "cpp-characterize": shellTool(
             "characterize.sh",
-            "特征化测试生成辅助：为指定文件/函数生成 gtest 特征化测试骨架",
+            "Generate gtest characterization test skeletons that LOCK existing behavior before refactoring. " +
+            "Without characterization tests, you cannot prove your refactor preserved behavior. " +
+            "Produces test files with normal-case + boundary + error-handling test stubs.",
             { target: schema.string() },
             (args) => [args.target]
         ),
 
         "cpp-ast-cache": shellTool(
             "clang-ast-cache.sh",
-            "AST 磁盘缓存管理：stats（查看）/ clean（清理）/ list（列出）",
+            "AST disk cache management: stats (view hit/miss counters and disk usage) / " +
+            "clean (clear cached .tu files) / list (show cached files). " +
+            "Use 'stats' to verify caching is working across MCP sessions.",
             { action: schema.string() },
             (args) => [args.action]
         ),
@@ -111,28 +148,29 @@ export function createTools(projectDir: string): Record<string, ToolDefinition> 
         // Ledger tools (multi-export)
         "ledger-init": shellTool(
             "ledger.sh",
-            "初始化三层台账（Wave/Batch/Partition）",
+            "Initialize the three-layer refactoring ledger (Wave/Batch/Partition). " +
+            "Run once at project start to create the tracking structure.",
             {},
             () => ["init"]
         ),
 
         "ledger-wave-add": shellTool(
             "ledger.sh",
-            "创建 Wave（战役级目标）",
+            "Create a Wave (campaign-level goal, e.g. 'eliminate global state in module X').",
             { description: schema.string() },
             (args) => ["wave-add", args.description]
         ),
 
         "ledger-batch-add": shellTool(
             "ledger.sh",
-            "创建 Batch（单会话目标），隶属于指定 Wave",
+            "Create a Batch (single-session goal) under a Wave.",
             { waveId: schema.string(), description: schema.string() },
             (args) => ["batch-add", args.waveId, args.description]
         ),
 
         "ledger-partition-add": shellTool(
             "ledger.sh",
-            "创建 Partition（最小执行单元，~4h），隶属于指定 Batch",
+            "Create a Partition (smallest execution unit, ~4h work) under a Batch.",
             {
                 batchId: schema.string(),
                 description: schema.string(),
@@ -143,35 +181,40 @@ export function createTools(projectDir: string): Record<string, ToolDefinition> 
 
         "ledger-promote": shellTool(
             "ledger.sh",
-            "推进分区状态（PLANNED→IN_PROGRESS→VERIFIED→DONE）",
+            "Advance partition state: PLANNED→IN_PROGRESS→VERIFIED→DONE.",
             { id: schema.string(), status: schema.string() },
             (args) => ["promote", args.id, args.status]
         ),
 
         "ledger-status": shellTool(
             "ledger.sh",
-            "查看当前台账状态概览",
+            "View current ledger status: all waves, batches, partitions and their states.",
             {},
             () => ["status"]
         ),
 
         "ledger-list": shellTool(
             "ledger.sh",
-            "列出所有分区详情",
+            "List all partition details with full history.",
             {},
             () => ["list"]
         ),
 
         "cpp-diagnose": shellTool(
             "diagnose.sh",
-            "一键诊断 cpp_refactory 环境：检测工具链、compile_commands.json、Docker/MCP 连通性，生成结构化诊断报告",
+            "One-click environment diagnosis: checks 17 items including toolchain availability, " +
+            "compile_commands.json validity and path correctness, Docker/MCP connectivity. " +
+            "Returns structured JSON report + human-readable summary with fix suggestions. " +
+            "Run this when tools fail or before starting work on a new machine.",
             { project: schema.optional(schema.string()) },
             (args, dir) => [args.project || dir]
         ),
 
         "cpp-pipeline": shellTool(
             "pipeline-verify.sh",
-            "重构流水线验证阶段：编译/测试/静态分析验证，返回结构化结果供流水线状态机消费",
+            "Refactoring pipeline verification: runs compilation + tests + static analysis (clang-tidy, cppcheck) " +
+            "on changed files. Returns structured pass/fail result. " +
+            "Use after code changes to verify nothing broke before moving to the next partition.",
             {
                 project: schema.optional(schema.string()),
                 stage: schema.optional(schema.string()),
@@ -181,7 +224,10 @@ export function createTools(projectDir: string): Record<string, ToolDefinition> 
 
         "cpp-quality-gate": shellTool(
             "quality-gate.sh",
-            "增量质量门禁：记录 baseline、对比变更后的警告/错误/测试增量，支持自定义阈值",
+            "Incremental quality gate: records a baseline of current warnings/tests/errors, " +
+            "then after changes compares and reports ONLY new issues (delta). " +
+            "Actions: 'baseline' (record current state), 'check' (compare with baseline), 'status' (show baseline). " +
+            "This prevents 'everything is broken' panic on legacy projects with thousands of existing warnings.",
             {
                 action: schema.string(),
                 project: schema.optional(schema.string()),
